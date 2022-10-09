@@ -4133,7 +4133,7 @@ static void show_stats(void) {
 
   if (queued_paths_old < queued_paths) {
     queued_paths_old = queued_paths;
-    fprintf(log_file,"%lu %d\n",(unsigned long)time(NULL),queued_paths);
+    fprintf(log_file, "%lu %d\n", (unsigned long)time(NULL), queued_paths);
   }
 
   SAYF(bSTG bV bSTOP "  total paths : " cRST "%-5s  " bSTG bV "\n",
