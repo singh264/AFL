@@ -111,6 +111,9 @@ EXP_ST u32 cpu_to_bind = 0;           /* id of free CPU core to bind      */
 
 static u32 stats_update_freq = 1;     /* Stats update frequency (execs)   */
 
+static FILE *log_file;
+static u32 queued_paths_old = 0;
+
 EXP_ST u8  skip_deterministic,        /* Skip deterministic stages?       */
            force_deterministic,       /* Force deterministic stages?      */
            use_splicing,              /* Recombine input files?           */
@@ -4128,6 +4131,11 @@ static void show_stats(void) {
 
   }
 
+  if (queued_paths_old < queued_paths) {
+    queued_paths_old = queued_paths;
+    fprintf(log_file,"%lu %d\n",(unsigned long)time(NULL),queued_paths);
+  }
+
   SAYF(bSTG bV bSTOP "  total paths : " cRST "%-5s  " bSTG bV "\n",
        DI(queued_paths));
 
@@ -7259,7 +7267,6 @@ EXP_ST void setup_dirs_fds(void) {
   tmp = alloc_printf("%s/plot_data", out_dir);
   fd = open(tmp, O_WRONLY | O_CREAT | O_EXCL, 0600);
   if (fd < 0) PFATAL("Unable to create '%s'", tmp);
-  ck_free(tmp);
 
   plot_file = fdopen(fd, "w");
   if (!plot_file) PFATAL("fdopen() failed");
@@ -7269,6 +7276,17 @@ EXP_ST void setup_dirs_fds(void) {
                      "unique_hangs, max_depth, execs_per_sec\n");
                      /* ignore errors */
 
+  tmp = alloc_printf("/home/user/log_%s_%d_%d.txt", use_banner, MAP_SIZE_POW2, MAP_SIZE);
+  log_file = fopen(tmp, "a");
+  if(log_file == NULL)
+  {
+    printf("Error");
+    exit(1);
+  }
+  ck_free(tmp);
+  fprintf(log_file, "%s\n", use_banner);
+  fprintf(log_file, "%d\n", MAP_SIZE_POW2);
+  fprintf(log_file, "%d\n", MAP_SIZE);
 }
 
 
@@ -8181,6 +8199,7 @@ stop_fuzzing:
   }
 
   fclose(plot_file);
+  fclose(log_file);
   destroy_queue();
   destroy_extras();
   ck_free(target_path);
