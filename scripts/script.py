@@ -52,11 +52,24 @@ def display_the_plots(gnu_coreutils_program, gnu_coreutils_program_data, index1,
     plt.legend()
     plt.show()
 
-def display_the_data(data):
+def display_the_plots_close_to_the_middle_plot(gnu_coreutils_program, gnu_coreutils_program_data, plots_count):
+    map_size_pow2_count = len(gnu_coreutils_program_data.keys())
+    middle_plot_index = int(map_size_pow2_count / 2)
+    index11 = int(middle_plot_index - plots_count / 2 + 1)
+    index12 = middle_plot_index + 1
+    index21 = middle_plot_index
+    index22 = int(middle_plot_index + plots_count / 2)
+    display_the_plots(gnu_coreutils_program, gnu_coreutils_program_data, index1=index11, index2=index12)
+    display_the_plots(gnu_coreutils_program, gnu_coreutils_program_data, index1=index21, index2=index22)
+
+def display_the_data(data, plots_count=10):
     for gnu_coreutils_program in data.keys():
         gnu_coreutils_program_data = data[gnu_coreutils_program]
-        display_the_plots(gnu_coreutils_program, gnu_coreutils_program_data, index1=5, index2=10)
-        display_the_plots(gnu_coreutils_program, gnu_coreutils_program_data, index1=9, index2=14)
+        if len(gnu_coreutils_program_data.keys()) < plots_count:
+            map_size_pow2_count = len(gnu_coreutils_program_data.keys())
+            display_the_plots(gnu_coreutils_program, gnu_coreutils_program_data, index1=0, index2=map_size_pow2_count)
+        else:
+            display_the_plots_close_to_the_middle_plot(gnu_coreutils_program, gnu_coreutils_program_data, plots_count)
 
 if __name__ == '__main__':
     data = dict()
