@@ -54,7 +54,13 @@ namespace {
     public:
 
       static char ID;
-      AFLCoverage() : ModulePass(ID) { }
+      char* log_file_name;
+      FILE* log_file;
+
+      AFLCoverage() : ModulePass(ID) {
+	log_file_name = obtainTheNameOfTheLogFile();
+        log_file = obtainTheLogFile();
+      }
 
       bool runOnModule(Module &M) override;
 
@@ -62,6 +68,36 @@ namespace {
       //  return "American Fuzzy Lop Instrumentation";
       // }
 
+      ~AFLCoverage() {
+        free(log_file_name);
+	fclose(log_file);
+      }
+
+    private:
+
+      char* obtainTheNameOfTheLogFile() {
+        char* log_file_name = NULL;
+        if (asprintf(&log_file_name, "/home/user/afl-llvm-pass_%s_%d_%d.txt", GNU_COREUTILS_PROGRAM, MAP_SIZE_POW2, MAP_SIZE) == -1)
+        {
+           printf("Error");
+           exit(1);
+        }
+	return log_file_name;
+      }
+
+      FILE* obtainTheLogFile() {
+        FILE* log_file = fopen(log_file_name, "a");
+        if(log_file == NULL)
+        {
+           printf("Error");
+           exit(1);
+        }
+        fprintf(log_file, "%s\n", GNU_COREUTILS_PROGRAM);
+        fprintf(log_file, "%d\n", MAP_SIZE_POW2);
+        fprintf(log_file, "%d\n", MAP_SIZE);
+        fprintf(log_file, "cur_loc, previous_location, hash, counter\n");
+	return log_file;
+      }
   };
 
 }
@@ -149,6 +185,8 @@ bool AFLCoverage::runOnModule(Module &M) {
       Value *Incr = IRB.CreateAdd(Counter, ConstantInt::get(Int8Ty, 1));
       IRB.CreateStore(Incr, MapPtrIdx)
           ->setMetadata(M.getMDKindID("nosanitize"), MDNode::get(C, None));
+
+      fprintf(log_file, "cur_loc, previous_location, hash, counter\n");
 
       /* Set prev_loc to cur_loc >> 1 */
 
