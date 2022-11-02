@@ -359,4 +359,6 @@
 
 // #define IGNORE_FINDS
 
+#define GNU_COREUTILS_PROGRAM "GNU_COREUTILS_PROGRAM"
+
 #endif /* ! _HAVE_CONFIG_H */
