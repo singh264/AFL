@@ -7276,7 +7276,14 @@ EXP_ST void setup_dirs_fds(void) {
                      "unique_hangs, max_depth, execs_per_sec\n");
                      /* ignore errors */
 
-  tmp = alloc_printf("/home/user/log_%s_%d_%d.txt", use_banner, MAP_SIZE_POW2, MAP_SIZE);
+  if(LLVM_MODE)
+  {
+    tmp = alloc_printf("/home/user/log_%s_%d_%d_llvm_mode.txt", use_banner, MAP_SIZE_POW2, MAP_SIZE);
+  }
+  else
+  {
+    tmp = alloc_printf("/home/user/log_%s_%d_%d.txt", use_banner, MAP_SIZE_POW2, MAP_SIZE);
+  }
   log_file = fopen(tmp, "a");
   if(log_file == NULL)
   {
