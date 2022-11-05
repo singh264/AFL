@@ -77,7 +77,7 @@ namespace {
 
       char* obtainTheNameOfTheLogFile() {
         char* log_file_name = NULL;
-        if (asprintf(&log_file_name, "/home/user/afl-llvm-pass_%s_%d_%d.txt", GNU_COREUTILS_PROGRAM, MAP_SIZE_POW2, MAP_SIZE) == -1)
+        if (asprintf(&log_file_name, "/home/user/afl-llvm-pass_%s_%d_%d.txt", INPUT_PROGRAM, MAP_SIZE_POW2, MAP_SIZE) == -1)
         {
            printf("Error");
            exit(1);
@@ -92,7 +92,7 @@ namespace {
            printf("Error");
            exit(1);
         }
-        fprintf(log_file, "%s\n", GNU_COREUTILS_PROGRAM);
+        fprintf(log_file, "%s\n", INPUT_PROGRAM);
         fprintf(log_file, "%d\n", MAP_SIZE_POW2);
         fprintf(log_file, "%d\n", MAP_SIZE);
         fprintf(log_file, "cur_loc, previous_location, hash, counter\n");
