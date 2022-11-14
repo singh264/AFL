@@ -111,7 +111,7 @@ EXP_ST u32 cpu_to_bind = 0;           /* id of free CPU core to bind      */
 
 static u32 stats_update_freq = 1;     /* Stats update frequency (execs)   */
 
-static FILE *log_file;
+static FILE *log_file_that_includes_the_total_paths;
 static u32 queued_paths_old = 0;
 
 EXP_ST u8  skip_deterministic,        /* Skip deterministic stages?       */
@@ -4133,7 +4133,7 @@ static void show_stats(void) {
 
   if (queued_paths_old < queued_paths) {
     queued_paths_old = queued_paths;
-    fprintf(log_file, "%lu %d\n", (unsigned long)time(NULL), queued_paths);
+    fprintf(log_file_that_includes_the_total_paths, "%lu %d\n", (unsigned long)time(NULL), queued_paths);
   }
 
   SAYF(bSTG bV bSTOP "  total paths : " cRST "%-5s  " bSTG bV "\n",
@@ -7278,22 +7278,22 @@ EXP_ST void setup_dirs_fds(void) {
 
   if(LLVM_MODE)
   {
-    tmp = alloc_printf("/home/user/log_%s_%d_%d_llvm_mode.txt", use_banner, MAP_SIZE_POW2, MAP_SIZE);
+    tmp = alloc_printf("/home/user/afl-fuzz_total_paths_%s_%d_%d_llvm_mode.txt", use_banner, MAP_SIZE_POW2, MAP_SIZE);
   }
   else
   {
-    tmp = alloc_printf("/home/user/log_%s_%d_%d.txt", use_banner, MAP_SIZE_POW2, MAP_SIZE);
+    tmp = alloc_printf("/home/user/afl-fuzz_total_paths_%s_%d_%d.txt", use_banner, MAP_SIZE_POW2, MAP_SIZE);
   }
-  log_file = fopen(tmp, "a");
-  if(log_file == NULL)
+  log_file_that_includes_the_total_paths = fopen(tmp, "a");
+  if(log_file_that_includes_the_total_paths == NULL)
   {
     printf("Error");
     exit(1);
   }
   ck_free(tmp);
-  fprintf(log_file, "%s\n", use_banner);
-  fprintf(log_file, "%d\n", MAP_SIZE_POW2);
-  fprintf(log_file, "%d\n", MAP_SIZE);
+  fprintf(log_file_that_includes_the_total_paths, "%s\n", use_banner);
+  fprintf(log_file_that_includes_the_total_paths, "%d\n", MAP_SIZE_POW2);
+  fprintf(log_file_that_includes_the_total_paths, "%d\n", MAP_SIZE);
 }
 
 
@@ -8206,7 +8206,7 @@ stop_fuzzing:
   }
 
   fclose(plot_file);
-  fclose(log_file);
+  fclose(log_file_that_includes_the_total_paths);
   destroy_queue();
   destroy_extras();
   ck_free(target_path);
