@@ -114,6 +114,9 @@ static u32 stats_update_freq = 1;     /* Stats update frequency (execs)   */
 static FILE *log_file_that_includes_the_total_paths;
 static u32 queued_paths_old = 0;
 
+static FILE *log_file_that_includes_the_unique_crashes;
+static u64 unique_crashes_old = 0;
+
 EXP_ST u8  skip_deterministic,        /* Skip deterministic stages?       */
            force_deterministic,       /* Force deterministic stages?      */
            use_splicing,              /* Recombine input files?           */
@@ -4142,6 +4145,11 @@ static void show_stats(void) {
   /* Highlight crashes in red if found, denote going over the KEEP_UNIQUE_CRASH
      limit with a '+' appended to the count. */
 
+  if (unique_crashes_old < unique_crashes) {
+    unique_crashes_old = unique_crashes;
+    fprintf(log_file_that_includes_the_unique_crashes, "%lu %lld\n", (unsigned long)time(NULL), unique_crashes);
+  }
+
   sprintf(tmp, "%s%s", DI(unique_crashes),
           (unique_crashes >= KEEP_UNIQUE_CRASH) ? "+" : "");
 
@@ -7294,6 +7302,25 @@ EXP_ST void setup_dirs_fds(void) {
   fprintf(log_file_that_includes_the_total_paths, "%s\n", use_banner);
   fprintf(log_file_that_includes_the_total_paths, "%d\n", MAP_SIZE_POW2);
   fprintf(log_file_that_includes_the_total_paths, "%d\n", MAP_SIZE);
+
+  if(LLVM_MODE)
+  {
+    tmp = alloc_printf("/home/user/afl-fuzz_unique_crashes_%s_%d_%d_llvm_mode.txt", use_banner, MAP_SIZE_POW2, MAP_SIZE);
+  }
+  else
+  {
+    tmp = alloc_printf("/home/user/afl-fuzz_unique_crashes_%s_%d_%d.txt", use_banner, MAP_SIZE_POW2, MAP_SIZE);
+  }
+  log_file_that_includes_the_unique_crashes = fopen(tmp, "a");
+  if(log_file_that_includes_the_unique_crashes == NULL)
+  {
+    printf("Error");
+    exit(1);
+  }
+  ck_free(tmp);
+  fprintf(log_file_that_includes_the_unique_crashes, "%s\n", use_banner);
+  fprintf(log_file_that_includes_the_unique_crashes, "%d\n", MAP_SIZE_POW2);
+  fprintf(log_file_that_includes_the_unique_crashes, "%d\n", MAP_SIZE);
 }
 
 
@@ -8207,6 +8234,7 @@ stop_fuzzing:
 
   fclose(plot_file);
   fclose(log_file_that_includes_the_total_paths);
+  fclose(log_file_that_includes_the_unique_crashes);
   destroy_queue();
   destroy_extras();
   ck_free(target_path);
