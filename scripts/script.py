@@ -5,6 +5,8 @@ def obtain_the_gnu_coreutils_program(file_name):
     return file_name.split("_")[3]
 
 def obtain_the_map_size_pow2(file_name):
+    if "afl-llvm-pass_" in file_name:
+        return int(file_name.split("_")[2])
     return int(file_name.split("_")[4])
 
 def is_the_fuzzer_in_the_llvm_mode(file_name):
@@ -32,6 +34,18 @@ def obtain_the_time(line):
 
 def obtain_the_statistic(line):
     return int(line.split(" ")[1])
+
+def is_the_afl_llvm_pass_data_correct(data):
+    is_the_afl_llvm_pass_data_correct = True
+    entities_in_the_data = data.split(", ")
+    if (len(entities_in_the_data) != 3):
+        is_the_afl_llvm_pass_data_correct = False
+    else:
+        for entity in entities_in_the_data:
+            if not entity.isnumeric():
+                is_the_afl_llvm_pass_data_correct = False;
+            break
+    return is_the_afl_llvm_pass_data_correct
 
 def add_the_log_file_to_the_data(data, map_size_pow2, is_llvm_mode, path, statistic_name):
     file_data = path.read_text().split("\n")
@@ -75,6 +89,26 @@ def display_the_log_file_with_the_time_in_hours(path):
             time = obtain_the_time(file_data[index]) - start_time
             statistic = obtain_the_statistic(file_data[index])
             print(str(time) + " " + str(statistic))
+
+def obtain_the_information_about_the_bitmap(directory_path):
+    paths = [path for path in directory_path.rglob("afl-llvm-pass_*.txt")]
+    for path in paths:
+        file_name = path.stem
+        print("Reading: ", file_name)
+        file_data = path.read_text().split("\n")
+        bitmap_data = dict()
+        for data in file_data:
+            if is_the_afl_llvm_pass_data_correct(data):
+                entities_in_the_data = data.split(", ")
+                current_location = entities_in_the_data[0]
+                previous_location = entities_in_the_data[1]
+                hash = entities_in_the_data[2]
+                if hash not in bitmap_data.keys():
+                    bitmap_data[hash] = list()
+                    bitmap_data[hash].append(current_location + " " + previous_location)
+        for key, value in bitmap_data.items():
+            if (len(value) > 1):
+                print(key + " " + str(value))
 
 if __name__ == '__main__':
     data = dict()
