@@ -14,7 +14,7 @@ def is_the_fuzzer_in_the_llvm_mode(file_name):
 
 def obtain_the_key_of_the_gnu_coreutils_program_plot_data(map_size_pow2, is_llvm_mode, path):
     key = str(map_size_pow2) + "_llvm_mode" if is_llvm_mode else str(map_size_pow2)
-    key += str(path)
+    key += "_" + str(path)
     return key
 
 def initialize_the_data(data, gnu_coreutils_program, map_size_pow2, is_llvm_mode, path, statistic_name):
@@ -47,6 +47,9 @@ def is_the_afl_llvm_pass_data_correct(data):
             break
     return is_the_afl_llvm_pass_data_correct
 
+def obtain_the_map_size_pow2_from_the_key(key):
+    return key.split("_")[0]
+
 def add_the_log_file_to_the_data(data, map_size_pow2, is_llvm_mode, path, statistic_name):
     file_data = path.read_text().split("\n")
     if is_data_in_the_log_file(file_data):
@@ -65,12 +68,13 @@ def add_the_log_file_to_the_data(data, map_size_pow2, is_llvm_mode, path, statis
 def display_the_data(data, statistic_name):
     for gnu_coreutils_program in data.keys():
         gnu_coreutils_program_data = data[gnu_coreutils_program]
-        for key in gnu_coreutils_program_data.keys():
+        for key in sorted(gnu_coreutils_program_data.keys()):
             if statistic_name in key:
                 gnu_coreutils_program_plot_data = gnu_coreutils_program_data[key]
                 time = gnu_coreutils_program_plot_data["time"]
                 statistic = gnu_coreutils_program_plot_data[statistic_name]
-                label = "AFL fuzzer with the LLVM mode" if "llvm_mode" in str(key) else "AFL fuzzer"
+                map_size_pow2 = obtain_the_map_size_pow2_from_the_key(key)
+                label = "AFL LLVM, map_size_pow2 = " + str(map_size_pow2) if "llvm_mode" in str(key) else "AFL, map_size_pow2 = " + str(map_size_pow2) 
                 if (len(time) == 1 and len(statistic) == 1):
                     plt.plot(time, statistic, label=label, marker="o", markersize=10)
                 else:
@@ -97,6 +101,8 @@ def obtain_the_information_about_the_bitmap(directory_path):
         print("Reading: ", file_name)
         file_data = path.read_text().split("\n")
         bitmap_data = dict()
+        number_of_hash_collisions = 0
+        number_of_hashes = 0
         for data in file_data:
             if is_the_afl_llvm_pass_data_correct(data):
                 entities_in_the_data = data.split(", ")
@@ -105,10 +111,29 @@ def obtain_the_information_about_the_bitmap(directory_path):
                 hash = entities_in_the_data[2]
                 if hash not in bitmap_data.keys():
                     bitmap_data[hash] = list()
-                    bitmap_data[hash].append(current_location + " " + previous_location)
-        for key, value in bitmap_data.items():
-            if (len(value) > 1):
-                print(key + " " + str(value))
+                else:
+                    number_of_hash_collisions += 1
+                bitmap_data[hash].append(current_location + " " + previous_location)
+                number_of_hashes += 1
+        print("Hash collisions = number_of_hash_collisions / number_of_hashes = " + str(number_of_hash_collisions / number_of_hashes))
+
+def obtain_the_good_size_of_the_bitmap(data, statistic_name):
+    good_map_size_pow2 = 0
+    for gnu_coreutils_program in data.keys():
+        good_statistic = 0
+        gnu_coreutils_program_data = data[gnu_coreutils_program]
+        for key in sorted(gnu_coreutils_program_data.keys()):
+            if statistic_name in key:
+                gnu_coreutils_program_plot_data = gnu_coreutils_program_data[key]
+                statistic = gnu_coreutils_program_plot_data[statistic_name]
+                if len(statistic) > 0:
+                    last_statistic = statistic[-1]
+                    map_size_pow2 = obtain_the_map_size_pow2_from_the_key(key)
+                    if last_statistic > good_statistic:
+                        good_map_size_pow2 = map_size_pow2
+                        good_statistic = last_statistic
+        print(gnu_coreutils_program + ", " + statistic_name)
+        print("Good map_size_pow2 = " + good_map_size_pow2)
 
 if __name__ == '__main__':
     data = dict()
@@ -125,3 +150,4 @@ if __name__ == '__main__':
     	    add_the_log_file_to_the_data(data, map_size_pow2, is_llvm_mode, path, statistic_name)
     	    
         display_the_data(data, statistic_name)
+        obtain_the_good_size_of_the_bitmap(data, statistic_name)
