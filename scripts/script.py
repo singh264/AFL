@@ -118,7 +118,7 @@ def obtain_the_information_about_the_bitmap(directory_path):
         print("Hash collisions = number_of_hash_collisions / number_of_hashes = " + str(number_of_hash_collisions / number_of_hashes))
 
 def obtain_the_good_size_of_the_bitmap(data, statistic_name):
-    good_map_size_pow2 = 0
+    good_map_size_pow2 = 16
     for gnu_coreutils_program in data.keys():
         good_statistic = 0
         gnu_coreutils_program_data = data[gnu_coreutils_program]
@@ -133,7 +133,7 @@ def obtain_the_good_size_of_the_bitmap(data, statistic_name):
                         good_map_size_pow2 = map_size_pow2
                         good_statistic = last_statistic
         print(gnu_coreutils_program + ", " + statistic_name)
-        print("Good map_size_pow2 = " + good_map_size_pow2)
+        print("Good map_size_pow2 = " + str(good_map_size_pow2))
 
 if __name__ == '__main__':
     data = dict()
