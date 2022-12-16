@@ -1,7 +1,7 @@
 from pathlib import Path
 import matplotlib.pyplot as plt
 
-def obtain_the_gnu_coreutils_program(file_name):
+def obtain_the_input_program(file_name):
     return file_name.split("_")[3]
 
 def obtain_the_map_size_pow2(file_name):
@@ -12,19 +12,19 @@ def obtain_the_map_size_pow2(file_name):
 def is_the_fuzzer_in_the_llvm_mode(file_name):
     return "llvm_mode" in file_name
 
-def obtain_the_key_of_the_gnu_coreutils_program_plot_data(map_size_pow2, is_llvm_mode, path):
+def obtain_the_key_of_the_input_program_plot_data(map_size_pow2, is_llvm_mode, path):
     key = str(map_size_pow2) + "_llvm_mode" if is_llvm_mode else str(map_size_pow2)
     key += "_" + str(path)
     return key
 
-def initialize_the_data(data, gnu_coreutils_program, map_size_pow2, is_llvm_mode, path, statistic_name):
-    if gnu_coreutils_program not in data.keys():
-        data[gnu_coreutils_program] = dict()
+def initialize_the_data(data, input_program, map_size_pow2, is_llvm_mode, path, statistic_name):
+    if input_program not in data.keys():
+        data[input_program] = dict()
 
-    key = obtain_the_key_of_the_gnu_coreutils_program_plot_data(map_size_pow2, is_llvm_mode, path)
-    data[gnu_coreutils_program][key] = dict()
-    data[gnu_coreutils_program][key]["time"] = []
-    data[gnu_coreutils_program][key][statistic_name] = []
+    key = obtain_the_key_of_the_input_program_plot_data(map_size_pow2, is_llvm_mode, path)
+    data[input_program][key] = dict()
+    data[input_program][key]["time"] = []
+    data[input_program][key][statistic_name] = []
 
 def is_data_in_the_log_file(file_data):
     return len(file_data) > 4
@@ -54,25 +54,25 @@ def add_the_log_file_to_the_data(data, map_size_pow2, is_llvm_mode, path, statis
     file_data = path.read_text().split("\n")
     if is_data_in_the_log_file(file_data):
         start_time = obtain_the_time(file_data[3])
-        key = obtain_the_key_of_the_gnu_coreutils_program_plot_data(map_size_pow2, is_llvm_mode, path)
-        gnu_coreutils_program_plot_data = data[gnu_coreutils_program][key]
-        gnu_coreutils_program_plot_data["time"].append(0)
-        gnu_coreutils_program_plot_data[statistic_name].append(obtain_the_statistic(file_data[3]))
+        key = obtain_the_key_of_the_input_program_plot_data(map_size_pow2, is_llvm_mode, path)
+        input_program_plot_data = data[input_program][key]
+        input_program_plot_data["time"].append(0)
+        input_program_plot_data[statistic_name].append(obtain_the_statistic(file_data[3]))
         for index in range(4, len(file_data) - 1):
             time = obtain_the_time(file_data[index]) - start_time
             statistic = obtain_the_statistic(file_data[index])
-            if ((time - gnu_coreutils_program_plot_data["time"][-1]) > 0):
-                gnu_coreutils_program_plot_data["time"].append(time)
-                gnu_coreutils_program_plot_data[statistic_name].append(statistic)
+            if ((time - input_program_plot_data["time"][-1]) > 0):
+                input_program_plot_data["time"].append(time)
+                input_program_plot_data[statistic_name].append(statistic)
 
 def display_the_data(data, statistic_name):
-    for gnu_coreutils_program in data.keys():
-        gnu_coreutils_program_data = data[gnu_coreutils_program]
-        for key in sorted(gnu_coreutils_program_data.keys()):
+    for input_program in data.keys():
+        input_program_data = data[input_program]
+        for key in sorted(input_program_data.keys()):
             if statistic_name in key:
-                gnu_coreutils_program_plot_data = gnu_coreutils_program_data[key]
-                time = gnu_coreutils_program_plot_data["time"]
-                statistic = gnu_coreutils_program_plot_data[statistic_name]
+                input_program_plot_data = input_program_data[key]
+                time = input_program_plot_data["time"]
+                statistic = input_program_plot_data[statistic_name]
                 map_size_pow2 = obtain_the_map_size_pow2_from_the_key(key)
                 label = "AFL LLVM, map_size_pow2 = " + str(map_size_pow2) if "llvm_mode" in str(key) else "AFL, map_size_pow2 = " + str(map_size_pow2) 
                 if (len(time) == 1 and len(statistic) == 1):
@@ -81,7 +81,7 @@ def display_the_data(data, statistic_name):
                     plt.plot(time, statistic, label=label)
         plt.xlabel("time in hours")
         plt.ylabel(statistic_name)
-        plt.title(gnu_coreutils_program)
+        plt.title(input_program)
         plt.legend()
         plt.show()
 
@@ -119,20 +119,20 @@ def obtain_the_information_about_the_bitmap(directory_path):
 
 def obtain_the_good_size_of_the_bitmap(data, statistic_name):
     good_map_size_pow2 = 16
-    for gnu_coreutils_program in data.keys():
+    for input_program in data.keys():
         good_statistic = 0
-        gnu_coreutils_program_data = data[gnu_coreutils_program]
-        for key in sorted(gnu_coreutils_program_data.keys()):
+        input_program_data = data[input_program]
+        for key in sorted(input_program_data.keys()):
             if statistic_name in key:
-                gnu_coreutils_program_plot_data = gnu_coreutils_program_data[key]
-                statistic = gnu_coreutils_program_plot_data[statistic_name]
+                input_program_plot_data = input_program_data[key]
+                statistic = input_program_plot_data[statistic_name]
                 if len(statistic) > 0:
                     last_statistic = statistic[-1]
                     map_size_pow2 = obtain_the_map_size_pow2_from_the_key(key)
                     if last_statistic > good_statistic:
                         good_map_size_pow2 = map_size_pow2
                         good_statistic = last_statistic
-        print(gnu_coreutils_program + ", " + statistic_name)
+        print(input_program + ", " + statistic_name)
         print("Good map_size_pow2 = " + str(good_map_size_pow2))
 
 if __name__ == '__main__':
@@ -142,11 +142,11 @@ if __name__ == '__main__':
         paths = [path for path in directory_path.rglob("afl-fuzz_" + statistic_name + "_*.txt")]
         for path in paths:
     	    file_name = path.stem
-    	    gnu_coreutils_program = obtain_the_gnu_coreutils_program(file_name)
+    	    input_program = obtain_the_input_program(file_name)
     	    map_size_pow2 = obtain_the_map_size_pow2(file_name)
     	    is_llvm_mode = is_the_fuzzer_in_the_llvm_mode(file_name)
     	    print("Reading: ", file_name)
-    	    initialize_the_data(data, gnu_coreutils_program, map_size_pow2, is_llvm_mode, path, statistic_name)
+    	    initialize_the_data(data, input_program, map_size_pow2, is_llvm_mode, path, statistic_name)
     	    add_the_log_file_to_the_data(data, map_size_pow2, is_llvm_mode, path, statistic_name)
     	    
         display_the_data(data, statistic_name)
