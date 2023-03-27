@@ -54,7 +54,13 @@ namespace {
     public:
 
       static char ID;
-      AFLCoverage() : ModulePass(ID) { }
+      char* log_file_name;
+      FILE* log_file;
+
+      AFLCoverage() : ModulePass(ID) {
+	log_file_name = obtainTheNameOfTheLogFile();
+        log_file = obtainTheLogFile();
+      }
 
       bool runOnModule(Module &M) override;
 
@@ -62,6 +68,36 @@ namespace {
       //  return "American Fuzzy Lop Instrumentation";
       // }
 
+      ~AFLCoverage() {
+        free(log_file_name);
+	fclose(log_file);
+      }
+
+    private:
+
+      char* obtainTheNameOfTheLogFile() {
+        char* log_file_name = NULL;
+        if (asprintf(&log_file_name, "/home/user/afl-llvm-pass_%s_%d_%d.txt", INPUT_PROGRAM, MAP_SIZE_POW2, MAP_SIZE) == -1)
+        {
+           printf("Error");
+           exit(1);
+        }
+	return log_file_name;
+      }
+
+      FILE* obtainTheLogFile() {
+        FILE* log_file = fopen(log_file_name, "a");
+        if(log_file == NULL)
+        {
+           printf("Error");
+           exit(1);
+        }
+        fprintf(log_file, "%s\n", INPUT_PROGRAM);
+        fprintf(log_file, "%d\n", MAP_SIZE_POW2);
+        fprintf(log_file, "%d\n", MAP_SIZE);
+        fprintf(log_file, "current_location, previous_location, hash\n");
+	return log_file;
+      }
   };
 
 }
@@ -111,6 +147,8 @@ bool AFLCoverage::runOnModule(Module &M) {
       M, Int32Ty, false, GlobalValue::ExternalLinkage, 0, "__afl_prev_loc",
       0, GlobalVariable::GeneralDynamicTLSModel, 0, false);
 
+  int64_t previous_location = 0;
+
   /* Instrument all the things! */
 
   int inst_blocks = 0;
@@ -150,11 +188,17 @@ bool AFLCoverage::runOnModule(Module &M) {
       IRB.CreateStore(Incr, MapPtrIdx)
           ->setMetadata(M.getMDKindID("nosanitize"), MDNode::get(C, None));
 
+      int64_t current_location = dyn_cast<ConstantInt>(CurLoc)->getSExtValue();
+      int64_t hash = current_location ^ previous_location;
+      fprintf(log_file, "%ld, %ld, %ld\n", current_location, previous_location, hash);
+
       /* Set prev_loc to cur_loc >> 1 */
 
       StoreInst *Store =
           IRB.CreateStore(ConstantInt::get(Int32Ty, cur_loc >> 1), AFLPrevLoc);
       Store->setMetadata(M.getMDKindID("nosanitize"), MDNode::get(C, None));
+
+      previous_location = current_location >> 1;
 
       inst_blocks++;
 

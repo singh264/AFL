@@ -359,4 +359,8 @@
 
 // #define IGNORE_FINDS
 
+#define INPUT_PROGRAM "INPUT_PROGRAM"
+
+#define LLVM_MODE 0
+
 #endif /* ! _HAVE_CONFIG_H */
